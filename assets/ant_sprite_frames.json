@@ -1,0 +1,6 @@
+[
+  {"name":"ant_walk01", "frame":{"x":5, "y": 3, "width": 54, "height": 60}},
+  {"name":"ant_walk02", "frame":{"x":73, "y": 2, "width": 47, "height": 62}},
+  {"name":"ant_walk03", "frame":{"x":133, "y": 3, "width": 54, "height": 60}},
+  {"name":"ant_walk04", "frame":{"x":200, "y": 2, "width": 47, "height": 62}},
+]
