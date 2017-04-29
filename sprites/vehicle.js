@@ -14,14 +14,13 @@
 
 var mr = 0.01;
 
-function Vehicle(x, y, dna, antSprite) {
+function Vehicle(x, y, dna) {
   this.acceleration = createVector(0, 0);
   this.velocity = createVector(0, -2);
   this.position = createVector(x, y);
   this.r = 4;
   this.maxspeed = 5;
   this.maxforce = 0.5;
-  this.antSprite = antSprite;
   this.health = 1;
 
   this.dna = [];
@@ -32,7 +31,7 @@ function Vehicle(x, y, dna, antSprite) {
     this.dna[1] = random(-2, 2);
     // Food perception
     this.dna[2] = random(0, 100);
-    // Poision Percepton
+    // Poison Percepton
     this.dna[3] = random(0, 100);
   } else {
     // Mutation
