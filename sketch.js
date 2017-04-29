@@ -1,10 +1,19 @@
 var vehicles = [];
 var food = [];
 var poison = [];
-var ant_sprite_image, ant_sprite_sheet, ant_walk, ant_frames, ant_image;
+var ant_sprite_image, ant_sprite_sheet, ant_walk, ant_frames, ant_image, antHillImage;
 var debug;
-let ant;
+
 let home;
+var SCENE_W = 1800;
+var SCENE_H = 1000;
+var frame;
+
+var bg;
+var ants =[];
+var antSprites;
+
+var rock1, rock2;
 
 function preload(){
   ant_frames = [
@@ -18,19 +27,38 @@ function preload(){
   ant_walk = loadAnimation(ant_sprite_sheet)
   ant_stand = loadAnimation(new SpriteSheet('assets/antSpriteSheet.png', ant_frames[0]))
   ant_image = loadImage('assets/Ant-48color.png')
+  antHillImage = loadImage('assets/anthill.png')
+  rock1 = loadImage('assets/Rock.png')
+  rock2 = loadImage('assets/RockShadow.png')
 }
 
 function setup() {
   createCanvas(900, 500);
-  ant = createSprite(width / 2, 100, 30, 30);
-  ant.addImage('static', ant_image);
-  ant.scale = .3;
-  ant.rotateToDirection = true;
-  home = createSprite(random(width), random(height), 30, 30)
-  home.immovable = true
-  home.visible = false
-  ant.restitution = 1;
 
+  // ant.rotationSpeed = 1;
+  home = createSprite(random(width), random(height), 30, 30)
+  home.immovable = true;
+  home.visible = true;
+  home.depth = 100;
+  home.addImage('anthill', antHillImage)
+  home.scale = 0.2
+  home.setCollider("circle",0,0,15)
+
+
+
+  bg = new Group();
+
+  //create some background for visual reference
+  for(var i=0; i<80; i++)
+  {
+  //create a sprite and add the 3 animations
+  var rock = createSprite(random(-width, SCENE_W+width), random(-height, SCENE_H+height));
+  //cycles through rocks 0 1 2
+  rock.addAnimation("normal", "assets/RockShadow.png");
+  rock.scale=0.3
+  rock.immovable=true
+  bg.add(rock);
+  }
   // for (var i = 0; i < 1; i++) {
   //   var x = random(width);
   //   var y = random(height);
@@ -52,11 +80,12 @@ function setup() {
   // }
 
   debug = createCheckbox();
+  antSprites = new Group()
+  for(var i=0; i<10; i++){
+    var ant = new Ant(home.position.x, home.position.y, antSprites)
+    ants.push(ant)
+  }
 
-
-  console.log(ant)
-  console.log(home)
-  ant.attractionPoint(1, home.newPosition.x, home.newPosition.y)
 }
 
 function mouseDragged() {
@@ -65,12 +94,21 @@ function mouseDragged() {
 
 function draw() {
   clear();
-  background(51);
-  ant.bounce(home)
-  fill(0, 255, 0);
-  noStroke();
-  ellipse(home.position.x, home.position.y, 4, 4);
+  background(50,150,50);
 
+  antSprites.collide(bg)
+
+  // if(antSprites.overlap(home)){
+  //   ant.visible=false;
+  //   ant.setSpeed(0,0);
+  // }
+
+  camera.position.x = home.position.x
+  camera.position.y = home.position.y
+  if(mouseIsPressed)
+    camera.zoom = .5;
+  else
+    camera.zoom = 1;
   // if (random(1) < 0.1)
   //   var x = random(width);
   //   var y = random(height);
@@ -116,4 +154,5 @@ function draw() {
   // }
 
   drawSprites()
+  camera.off();
 }
