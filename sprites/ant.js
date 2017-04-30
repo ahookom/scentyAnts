@@ -5,23 +5,45 @@ let maxHealth = 100;
 let gatheringEffectiveness = 5;
 let leaveFrequency = 8;
 
-function Ant(x, y, home, isRedAnt, dna=[]){
-  this.homePosition = home.position
-  this.dna = dna;
-  this.isRedAnt = isRedAnt;
-  this.hasFoodAmount = 0;
-  this.health = maxHealth;
-  this.minHealth = 80;
-  this.acceleration = createVector(0, 0);
-  this.activity = 'wander';
-  this.setupSprite(x, y);
-  this.leaveFrequency = leaveFrequency;
-  this.leaveTrailCounter = trailOffset++ % this.leaveFrequency;
-  this.overlapWanderTrail = false;
-  this.overlapHarvestTrail = false;
-  this.toggleTackleFood = this.toggleTackleFood.bind(this)
-  this.dropFood = this.dropFood.bind(this)
-  this.followTrail = this.followTrail.bind(this)
+function newAnt(x, y, home, isRedAnt){
+  let newSprite = createSprite(x, y, 30, 30);
+  newSprite = setupAntSprite(newSprite);
+  newSprite.homePosition = home.position;
+  newSprite.isRedAnt = isRedAnt;
+  newSprite.hasFoodAmount = 0;
+  newSprite.health = maxHealth;
+  newSprite.minHealth = 80;
+  newSprite.activity = 'wander';
+  newSprite.leaveFrequency = leaveFrequency;
+  newSprite.leaveTrailCounter = trailOffset++ % newSprite.leaveFrequency;
+  assignAntMethods(newSprite)
+  return newSprite;
+}
+
+function Ant(){
+  return {};
+}
+
+function assignAntMethods(antSprite){
+  for (let method in Ant.prototype){
+    antSprite[method] = Ant.prototype[method]
+  }
+}
+
+function setupAntSprite(antSprite){
+  antSprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
+  antSprite.scale = .3;
+  antSprite.setCollider('circle', 0, 0, 10);
+  antSprite.rotateToDirection = true;
+  antSprite.restitution = .8;
+  antSprite.setSpeed(1, random(360));
+  antSprite.limitSpeed(1);
+  let originalDraw = antSprite.draw;
+  antSprite.draw = function(){
+    rotate(PI/2)
+    originalDraw()
+  }
+  return antSprite;
 }
 
 Ant.prototype.setActivity = function(activity){
@@ -37,13 +59,13 @@ Ant.prototype.eatHomeSupply = function(antSprite, homeSprite){
 }
 
 Ant.prototype.headHome = function(){
-  let homePath = p5.Vector.sub(this.homePosition, this.sprite.position)
+  let homePath = p5.Vector.sub(this.homePosition, this.position)
   homePath.normalize()
-  this.sprite.setVelocity(homePath.x, homePath.y)
+  this.setVelocity(homePath.x, homePath.y)
 }
 
 Ant.prototype.headAwayFromHome = function(){
-  this.sprite.setVelocity(-this.sprite.velocity.x, -this.sprite.velocity.y)
+  this.setVelocity(-this.velocity.x, -this.velocity.y)
 }
 
 Ant.prototype.followTrail = function(antSprite, trailSprite){
@@ -100,38 +122,38 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
   }
 }
 
-Ant.prototype.setupSprite = function(x,y){
-  this.sprite = createSprite(x, y, 30, 30);
-  this.sprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
-  this.sprite.scale = .3;
-  this.sprite.setCollider('circle', 0, 0, 10)
-  this.sprite.rotateToDirection = true;
-  this.sprite.restitution = .8;
-  this.sprite.setSpeed(1, random(360))
-  this.sprite.debug = false
-  this.sprite.limitSpeed(1)
-  // this.sprite.friction=random(.99,1)
-  let originalDraw = this.sprite.draw
-  this.sprite.draw = this.draw(originalDraw)
-}
+// Ant.prototype.setupSprite = function(x,y){
+//   this.sprite = createSprite(x, y, 30, 30);
+//   this.sprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
+//   this.sprite.scale = .3;
+//   this.sprite.setCollider('circle', 0, 0, 10)
+//   this.sprite.rotateToDirection = true;
+//   this.sprite.restitution = .8;
+//   this.sprite.setSpeed(1, random(360))
+//   this.sprite.debug = false
+//   this.sprite.limitSpeed(1)
+//   // this.sprite.friction=random(.99,1)
+//   let originalDraw = this.sprite.draw
+//   this.sprite.draw = this.draw(originalDraw)
+// }
 
 Ant.prototype.leaveTrail = function(){
   if (++this.leaveTrailCounter === this.leaveFrequency){
     if (this.activity === 'harvest'){
       this.leaveTrailCounter = 0
-      return foodTrailMarker(this.sprite.position.x, this.sprite.position.y)
+      return foodTrailMarker(this.position.x, this.position.y)
     }
     if (this.activity === 'wander'){
       this.leaveTrailCounter = 0
-      return wanderTrailMarker(this.sprite.position.x, this.sprite.position.y)
+      return wanderTrailMarker(this.position.x, this.position.y)
     }
   }
   return undefined
 }
 
-Ant.prototype.draw = function(originalDraw){
-  return function(){
-    rotate(PI/2)
-    originalDraw()
-  }
-}
+// Ant.prototype.draw = function(originalDraw){
+//   return function(){
+//     rotate(PI/2)
+//     originalDraw()
+//   }
+// }

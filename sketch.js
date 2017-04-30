@@ -45,6 +45,7 @@ function setup() {
   antSprites = new Group();
   blackAnts = new Group();
   redAnts = new Group();
+  ants = new Group();
 
   // make anthill 'homes'
   let widthChunkSize = width * 2 / initialColonies;
@@ -81,10 +82,14 @@ function setup() {
   for (let i = 0; i < homes.length; i++){
     let isRedAnt = !!(i % 2);
     for (let j = 0; j < initialPopSize; j++){
-      let ant = new Ant(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], isRedAnt);
+      let ant = newAnt(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], isRedAnt);
       ants.push(ant);
-      antSprites.add(ant.sprite);
-      isRedAnt ? redAnts.add(ant.sprite) : blackAnts.add(ant.sprite);
+      antSprites.add(ant);
+      if(isRedAnt){
+        redAnts.add(ant)
+      }else{
+        blackAnts.add(ant);
+      }
     }
   }
 }
@@ -101,20 +106,20 @@ function addAntToFoodSupply(antSprite, homeSprite) {
   homeSprite.foodSupply += foodForDead;
 }
 
-function antFight(antSprite, antSprite){
-  ant1.health -=
+function antFight(antSprite1, antSprite2){
+
 }
 
 function draw() {
   frameCounter++;
   clear();
   background(50, 150, 50);
-  antSprites.collide(bg, turn);
+  ants.collide(bg, turn);
   redAnts.overlap(blackAnts, antFight);
   //handle ant game-logic
   for(let index = 0;index < ants.length;index++){
-    let antSprite = ants[index].sprite;
-    let currentVelocity = antSprite.velocity
+    let antSprite = ants[index];
+    let currentVelocity = antSprite.velocity;
     if(!ants[index])continue;
 
     //kill dead ants
@@ -123,10 +128,8 @@ function draw() {
       if(!antSprite.overlap(homes, addAntToFoodSupply)){
         newFood(location.x, location.y, food, foodForDead, whiteAntImage);
       }
-      ants = ants.slice(0, index)
-      ants = ants.concat(ants.slice(index + 1))
       antSprite.remove()
-      antSprites.remove(antSprite)
+      ants.remove(antSprite)
       continue;
     }
 
