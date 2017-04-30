@@ -1,77 +1,70 @@
-var vehicles = [];
-var food = [];
-var poison = [];
-var ant_sprite_image, ant_sprite_sheet, ant_walk, ant_frames, ant_image, antHillImage, appleImage;
+//images
+let brownAntImage, redAntImage, antHillImage, appleImage;
+var rock1Image, rock2Image;
 var debug;
 
-let home;
-var SCENE_W = 500;
+//game config settings
+var SCENE_W = 600;
 var SCENE_H = 400;
 let frameCounter = 1;
-let standardFoodAmount = 60;
-let foodForDead = 10;
+const standardFoodAmount = 60;
+const foodForDead = 10;
+const initialPopSize = 10;
+const initialColonies = 2;
+const currentHomeFocus = 0;
 
+//sprite groups
 var bg;
 var ants =[];
 var antSprites;
 var harvestTrail = [];
 let wanderTrail = [];
 var food = [];
-
-var rock1, rock2;
+let homes = [];
 
 function preload(){
-  ant_frames = [
-    {"name":"ant_walk01", "frame":{"x":5, "y": 3, "width": 54, "height": 60}},
-    {"name":"ant_walk02", "frame":{"x":5, "y": 2, "width": 47, "height": 62}},
-    {"name":"ant_walk03", "frame":{"x":5, "y": 3, "width": 54, "height": 60}},
-    {"name":"ant_walk04", "frame":{"x":5, "y": 2, "width": 47, "height": 62}},
-]
-  ant_sprite_sheet = loadSpriteSheet('assets/antSpriteSheet.png', 55,60, 16);
-  console.log(ant_sprite_sheet)
-  ant_walk = loadAnimation(ant_sprite_sheet)
-  ant_stand = loadAnimation(new SpriteSheet('assets/antSpriteSheet.png', ant_frames[0]))
-  ant_image = loadImage('assets/Ant-48color.png')
+  redAntImage = loadImage('assets/Ant-48red.png')
+  brownAntImage = loadImage('assets/Ant-48brown.png')
   antHillImage = loadImage('assets/anthill.png')
-  rock1 = loadImage('assets/Rock.png')
-  rock2 = loadImage('assets/RockShadow.png')
+  rock1Image = loadImage('assets/Rock.png')
+  rock2Image = loadImage('assets/RockShadow.png')
   appleImage = loadImage('assets/red-apple.png')
 }
 
 function setup() {
-  createCanvas(500, 400);
-  console.log('width', width,'height', height)
-  // make Anthill 'home'
-  home = createSprite(0, 0)
-  home.immovable = true;
-  home.visible = true;
-  home.depth = home.position.y + 10
-  home.addImage('anthill', antHillImage)
-  home.scale = 0.1
-  home.setCollider("circle", 0, 0, 20)
-  let homeDrawTemp = home.draw
-  home.draw = function(){
-    homeDrawTemp()
-  }
-  home.foodSupply = 10;
-
+  createCanvas(300, 200);
+  //establish sprite groups
+  homes = new Group()
   bg = new Group();
+  harvestTrail = new Group()
+  wanderTrail = new Group()
+  food = new Group()
+  antSprites = new Group()
+
+  // make anthill 'homes'
+  let widthChunkSize = width * 2 / initialColonies;
+  let heightOffset = height / 2;
+  let currentChunkBeginning = -width;
+  for(let i = 0 ; i < initialColonies; i++){
+    homes.add(newHome(currentChunkBeginning + widthChunkSize / 2, heightOffset));
+    heightOffset*=-1;
+    currentChunkBeginning+=widthChunkSize
+  }
 
   //create some background rocks for visual reference
   for(let i = 0; i < 1; i++){
     var rock = createSprite(random(-width,width), random(-height,height));
     //cycles through rocks 0 1 2
-    rock.addAnimation("normal", "assets/RockShadow.png");
+    rock.addImage(rock2Image);
     rock.depth = rock.position.y;
     rock.scale= random(.1,.2)+rock.position.y*.0001
     rock.immovable=true
     bg.add(rock);
   }
-  harvestTrail = new Group()
-  wanderTrail = new Group()
+
 
   //make FOOD
-  food = new Group()
+
   for (let i = 0; i < 25; i++) {
     newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
   }
@@ -79,12 +72,13 @@ function setup() {
   debug = createCheckbox();
 
   //make ANTS
-  antSprites = new Group()
-  for(var i = 0; i < 10; i++){
-    var ant = new Ant(home.position.x + random(-10,10), home.position.y + random(-10,10), antSprites)
-    ants.push(ant)
-  }
 
+  for (let i = 0; i < homes.length; i++){
+    for (let j = 0; j < initialPopSize; j++){
+      let ant = new Ant(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], antSprites)
+      ants.push(ant)
+    }
+  }
 }
 
 // function mouseDragged() {
@@ -94,13 +88,16 @@ function setup() {
 function turn(antSprite) {
   antSprite.setSpeed(0.2, random(360))
 }
-
+function addToFoodSupply(antSprite, homeSprite) {
+  console.log(homeSprite.position)
+  homeSprite.foodSupply += foodForDead;
+}
 
 function draw() {
   frameCounter++;
   clear();
   background(50, 150, 50);
-
+  drawSprites(homes)
   antSprites.collide(bg, turn)
 
   //handle ant game-logic
@@ -108,14 +105,11 @@ function draw() {
     let antSprite = ants[index].sprite;
     let currentVelocity = antSprite.velocity
     if(!ants[index])continue;
-
     //kill dead ants
     if(ants[index].health < 1){
       let location = antSprite.position
-      if(!antSprite.overlap(home)){
+      if(!antSprite.overlap(homes, addToFoodSupply)){
         newFood(location.x, location.y, food, foodForDead);
-      }else{
-        home.foodSupply += 10;
       }
       ants = ants.slice(0, index)
       ants = ants.concat(ants.slice(index + 1))
@@ -133,24 +127,26 @@ function draw() {
       currentVelocity.add(createVector(random(-.1,.1), random(-.1,.1)))
     }
     //this ant is starving. send him home to use the foodSupply
-    if(ants[index].health < starvationThreshold){
+    if(ants[index].health < starvationThreshold && ants[index].activity !== 'feed'){
       ants[index].headHome();
       ants[index].setActivity('feed');
-    }
+    } else
     //checks if the starving ant made it home lets him eat if he did
-    if(ants[index].activity === 'feed' && antSprite.overlap(home, ants[index].eatHomeSupply.bind(ants[index])))
+    if(ants[index].activity === 'feed' && antSprite.overlap(homes, ants[index].eatHomeSupply.bind(ants[index]))){
+      continue;
+    }
 
     //the ant hits the edge of the board, turn him around
     if (abs(antSprite.position.x) > width){
       antSprite.setVelocity(currentVelocity.x*-1, currentVelocity.y)
-    } else
+    }
     if (abs(antSprite.position.y) > height){
       antSprite.setVelocity(currentVelocity.x, currentVelocity.y*-1)
     }
 
     //an ant with food should be on the way home. If it makes it home, it will drop it off in the overlap callback function and continue harvesting
     if (ants[index].hasFoodAmount && ants[index].hasFoodAmount > 0){
-      if (!antSprite.overlap(home, ants[index].dropFood)){
+      if (!antSprite.overlap(homes, ants[index].dropFood)){
 
         ants[index].headHome()
         continue;
@@ -164,7 +160,7 @@ function draw() {
     } else
 
     if (ants[index].activity !== 'harvest' && antSprite.overlap(harvestTrail, ants[index].followTrail)){
-      ants[index].setActivity('harvest')
+      continue;
     } else
 
     if (ants[index].activity === 'wander'){
@@ -190,8 +186,8 @@ function draw() {
     })
   }
 
-  camera.position.x = home.position.x
-  camera.position.y = home.position.y
+  camera.position.x = 0
+  camera.position.y = 0
   if(mouseIsPressed)
     camera.zoom = .50;
   else

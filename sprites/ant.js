@@ -5,9 +5,10 @@ let maxHealth = 100;
 let gatheringEffectiveness = 5;
 let leaveFrequency = 8;
 
-function Ant(x, y, group, dna=[]){
-  this.homePosition = createVector(x, y)
+function Ant(x, y, home, group, dna=[]){
+  this.homePosition = home.position
   this.dna = dna;
+  this.isRedAnt = false;
   this.hasFoodAmount = 0;
   this.health = maxHealth;
   this.minHealth = 80;
@@ -37,16 +38,12 @@ Ant.prototype.eatHomeSupply = function(antSprite, homeSprite){
 }
 
 Ant.prototype.headHome = function(){
-  let homePath = this.homePosition.sub(this.sprite.position)
+  let homePath = p5.Vector.sub(this.homePosition, this.sprite.position)
   homePath.normalize()
   this.sprite.setVelocity(homePath.x, homePath.y)
 }
 
 Ant.prototype.headAwayFromHome = function(){
-  // let currentVelocity
-  // let awayPath = this.homePosition.add(this.sprite.position)
-  // awayPath.normalize()
-  // awayPath.mult(.5)
   this.sprite.setVelocity(-this.sprite.velocity.x, -this.sprite.velocity.y)
 }
 
@@ -55,8 +52,8 @@ Ant.prototype.followTrail = function(antSprite, trailSprite){
   let trailCenter = trailSprite.position;
   let newVelocity = trailCenter.sub(homeCenter.x, homeCenter.y)
   newVelocity.normalize()
-  console.log(newVelocity)
   antSprite.setVelocity(newVelocity.x, newVelocity.y)
+  this.setActivity('harvest')
 }
 
 Ant.prototype.dropFood = function(antSprite, homeSprite){
@@ -70,6 +67,7 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
   if (antSprite.position.dist(foodSprite.position) < 3){
 
     if (foodSprite.amount < 3){
+      this.setActivity('wander')
 
       if(foodSprite.amount){
         if(this.health < this.minHealth){
@@ -78,8 +76,8 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
         this.hasFoodAmount = foodSprite.amount;
         }
       }
-
-      foodSprite.remove(100)
+      foodIsGoneMarker(foodSprite.position.x, foodSprite.position.y)
+      foodSprite.remove()
       food.remove(foodSprite)
 
     }else{
@@ -105,7 +103,7 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
 
 Ant.prototype.setupSprite = function(x,y){
   this.sprite = createSprite(x, y, 30, 30);
-  this.sprite.addImage('static', ant_image);
+  this.sprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
   this.sprite.scale = .3;
   this.sprite.setCollider('circle', 0, 0, 10)
   this.sprite.rotateToDirection = true;

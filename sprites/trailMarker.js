@@ -3,13 +3,25 @@ function foodTrailMarker(x, y){
   let newMarker = createSprite(x, y)
   newMarker.type = 'food'
   newMarker.draw = function(){
-    noFill()
     stroke(255)
-    ellipse(0, 0, 2)
+    ellipse(0, 0, 1)
   }
   newMarker.debug = false
   newMarker.life = 250
-  newMarker.setCollider('circle', 0, 0, 25)
+  newMarker.setCollider('circle', 0, 0, 30)
+  return newMarker
+}
+
+function foodIsGoneMarker(x, y){
+  let newMarker = createSprite(x, y)
+  newMarker.type = 'foodGone'
+  newMarker.draw = function(){
+    stroke(70)
+    ellipse(0, 0, 1)
+  }
+  newMarker.debug = false
+  newMarker.life = 1000
+  newMarker.setCollider('circle', 0, 0, 50)
   return newMarker
 }
 
