@@ -1,5 +1,5 @@
 //images
-let brownAntImage, redAntImage, antHillImage, appleImage;
+let brownAntImage, redAntImage, whiteAntImage, antHillImage, appleImage;
 var rock1Image, rock2Image;
 var debug;
 
@@ -7,9 +7,9 @@ var debug;
 var SCENE_W = 600;
 var SCENE_H = 400;
 let frameCounter = 1;
-const standardFoodAmount = 60;
+const standardFoodAmount = 40;
 const foodForDead = 10;
-const initialPopSize = 10;
+const initialPopSize = 20;
 const initialColonies = 2;
 const currentHomeFocus = 0;
 
@@ -27,6 +27,7 @@ let blackAnts=[];
 function preload(){
   redAntImage = loadImage('assets/Ant-48red.png');
   brownAntImage = loadImage('assets/Ant-48brown.png');
+  whiteAntImage = loadImage('assets/Ant-48white.png');
   antHillImage = loadImage('assets/anthill.png');
   rock1Image = loadImage('assets/Rock.png');
   rock2Image = loadImage('assets/RockShadow.png');
@@ -93,30 +94,34 @@ function setup() {
 // }
 
 function turn(antSprite) {
-  antSprite.setSpeed(0.2, random(360))
+  antSprite.setSpeed(0.5, random(360))
 }
-function addToFoodSupply(antSprite, homeSprite) {
-  console.log(homeSprite.position)
+
+function addAntToFoodSupply(antSprite, homeSprite) {
   homeSprite.foodSupply += foodForDead;
+}
+
+function antFight(antSprite, antSprite){
+  ant1.health -=
 }
 
 function draw() {
   frameCounter++;
   clear();
   background(50, 150, 50);
-  drawSprites(homes)
-  antSprites.collide(bg, turn)
-
+  antSprites.collide(bg, turn);
+  redAnts.overlap(blackAnts, antFight);
   //handle ant game-logic
   for(let index = 0;index < ants.length;index++){
     let antSprite = ants[index].sprite;
     let currentVelocity = antSprite.velocity
     if(!ants[index])continue;
+
     //kill dead ants
     if(ants[index].health < 1){
       let location = antSprite.position
-      if(!antSprite.overlap(homes, addToFoodSupply)){
-        newFood(location.x, location.y, food, foodForDead);
+      if(!antSprite.overlap(homes, addAntToFoodSupply)){
+        newFood(location.x, location.y, food, foodForDead, whiteAntImage);
       }
       ants = ants.slice(0, index)
       ants = ants.concat(ants.slice(index + 1))
