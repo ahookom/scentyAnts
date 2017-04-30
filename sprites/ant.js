@@ -5,17 +5,16 @@ let maxHealth = 100;
 let gatheringEffectiveness = 5;
 let leaveFrequency = 8;
 
-function Ant(x, y, home, group, dna=[]){
+function Ant(x, y, home, isRedAnt, dna=[]){
   this.homePosition = home.position
   this.dna = dna;
-  this.isRedAnt = false;
+  this.isRedAnt = isRedAnt;
   this.hasFoodAmount = 0;
   this.health = maxHealth;
   this.minHealth = 80;
   this.acceleration = createVector(0, 0);
   this.activity = 'wander';
   this.setupSprite(x, y);
-  group.add(this.sprite);
   this.leaveFrequency = leaveFrequency;
   this.leaveTrailCounter = trailOffset++ % this.leaveFrequency;
   this.overlapWanderTrail = false;

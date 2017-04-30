@@ -14,32 +14,36 @@ const initialColonies = 2;
 const currentHomeFocus = 0;
 
 //sprite groups
-var bg;
+var bg=[];
 var ants =[];
-var antSprites;
+var antSprites=[];
 var harvestTrail = [];
 let wanderTrail = [];
 var food = [];
 let homes = [];
+let redAnts=[];
+let blackAnts=[];
 
 function preload(){
-  redAntImage = loadImage('assets/Ant-48red.png')
-  brownAntImage = loadImage('assets/Ant-48brown.png')
-  antHillImage = loadImage('assets/anthill.png')
-  rock1Image = loadImage('assets/Rock.png')
-  rock2Image = loadImage('assets/RockShadow.png')
-  appleImage = loadImage('assets/red-apple.png')
+  redAntImage = loadImage('assets/Ant-48red.png');
+  brownAntImage = loadImage('assets/Ant-48brown.png');
+  antHillImage = loadImage('assets/anthill.png');
+  rock1Image = loadImage('assets/Rock.png');
+  rock2Image = loadImage('assets/RockShadow.png');
+  appleImage = loadImage('assets/red-apple.png');
 }
 
 function setup() {
   createCanvas(300, 200);
   //establish sprite groups
-  homes = new Group()
+  homes = new Group();
   bg = new Group();
-  harvestTrail = new Group()
-  wanderTrail = new Group()
-  food = new Group()
-  antSprites = new Group()
+  harvestTrail = new Group();
+  wanderTrail = new Group();
+  food = new Group();
+  antSprites = new Group();
+  blackAnts = new Group();
+  redAnts = new Group();
 
   // make anthill 'homes'
   let widthChunkSize = width * 2 / initialColonies;
@@ -74,9 +78,12 @@ function setup() {
   //make ANTS
 
   for (let i = 0; i < homes.length; i++){
+    let isRedAnt = !!(i % 2);
     for (let j = 0; j < initialPopSize; j++){
-      let ant = new Ant(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], antSprites)
-      ants.push(ant)
+      let ant = new Ant(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], isRedAnt);
+      ants.push(ant);
+      antSprites.add(ant.sprite);
+      isRedAnt ? redAnts.add(ant.sprite) : blackAnts.add(ant.sprite);
     }
   }
 }
