@@ -6,6 +6,6 @@ function newHome(x, y){
   newHome.addImage('anthill', antHillImage);
   newHome.scale = 0.1;
   newHome.setCollider("circle", 0, 0, 20);
-  newHome.foodSupply = 10;
+  newHome.foodSupply = initialFoodSupply;
   return newHome;
 }

@@ -12,6 +12,7 @@ const foodForDead = 10;
 const initialPopSize = 20;
 const initialColonies = 2;
 const currentHomeFocus = 0;
+const initialFoodSupply = 10;
 
 //sprite groups
 var bg=[];
@@ -71,7 +72,7 @@ function setup() {
 
   //make FOOD
 
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 10; i++) {
     newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
   }
 
@@ -107,7 +108,20 @@ function addAntToFoodSupply(antSprite, homeSprite) {
 }
 
 function antFight(antSprite1, antSprite2){
-
+  antSprite1.health -= antSprite2.strength * .5 + antSprite2.strength * antSprite2.health / 200
+  antSprite2.health -= antSprite1.strength * .5 + antSprite1.strength * antSprite1.health / 200
+  antSprite1.attractionPoint(.1, antSprite2.position.x, antSprite2.position.y)
+  antSprite2.attractionPoint(.1, antSprite1.position.x, antSprite1.position.y)
+  if(antSprite2.health > 0){
+    antSprite1.activity = 'fight'
+  }else{
+    antSprite1.activity = 'wander'
+  }
+  if(antSprite1.health > 0){
+    antSprite2.activity = 'fight'
+  } else{
+    antSprite2.activity = 'wander'
+  }
 }
 
 function draw() {
@@ -115,11 +129,16 @@ function draw() {
   clear();
   background(50, 150, 50);
   ants.collide(bg, turn);
-  redAnts.overlap(blackAnts, antFight);
+  if(frameCounter%2){
+    redAnts.displace(blackAnts, antFight);
+  } else{
+    blackAnts.displace(redAnts, antFight);
+  }
   //handle ant game-logic
   for(let index = 0;index < ants.length;index++){
     let antSprite = ants[index];
     let currentVelocity = antSprite.velocity;
+    antSprite.health -= 0.1
     if(!ants[index])continue;
 
     //kill dead ants
@@ -146,7 +165,7 @@ function draw() {
       ants[index].headHome();
       ants[index].setActivity('feed');
     } else
-    //checks if the starving ant made it home lets him eat if he did
+    //checks if the starving ant made it home lets him eat if he did (unless no food)
     if(ants[index].activity === 'feed' && antSprite.overlap(homes, ants[index].eatHomeSupply.bind(ants[index]))){
       continue;
     }
@@ -204,9 +223,9 @@ function draw() {
   camera.position.x = 0
   camera.position.y = 0
   if(mouseIsPressed)
-    camera.zoom = .50;
-  else
     camera.zoom = 1;
+  else
+    camera.zoom = 0.5;
 
   // if (random(1) < 0.1)
   //   var x = random(width);

@@ -4,14 +4,16 @@ let starvationThreshold = 50;
 let maxHealth = 100;
 let gatheringEffectiveness = 5;
 let leaveFrequency = 8;
+let defaultStrength = 10;
 
 function newAnt(x, y, home, isRedAnt){
   let newSprite = createSprite(x, y, 30, 30);
+  newSprite.isRedAnt = isRedAnt;
   newSprite = setupAntSprite(newSprite);
   newSprite.homePosition = home.position;
-  newSprite.isRedAnt = isRedAnt;
   newSprite.hasFoodAmount = 0;
   newSprite.health = maxHealth;
+  newSprite.strength = defaultStrength;
   newSprite.minHealth = 80;
   newSprite.activity = 'wander';
   newSprite.leaveFrequency = leaveFrequency;
@@ -31,7 +33,7 @@ function assignAntMethods(antSprite){
 }
 
 function setupAntSprite(antSprite){
-  antSprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
+  antSprite.addImage('static', antSprite.isRedAnt ? redAntImage : brownAntImage);
   antSprite.scale = .3;
   antSprite.setCollider('circle', 0, 0, 10);
   antSprite.rotateToDirection = true;
@@ -51,11 +53,12 @@ Ant.prototype.setActivity = function(activity){
 }
 
 Ant.prototype.eatHomeSupply = function(antSprite, homeSprite){
-  while(this.health < maxHealth){
+  while(this.health < maxHealth && homeSprite.foodSupply > 0){
     homeSprite.foodSupply -= 1;
     this.health += foodEffectiveness;
   }
   this.activity = 'wander';
+  if(homeSprite.foodSupply < 1)this.activity = 'frenzy';
 }
 
 Ant.prototype.headHome = function(){
@@ -122,21 +125,6 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
   }
 }
 
-// Ant.prototype.setupSprite = function(x,y){
-//   this.sprite = createSprite(x, y, 30, 30);
-//   this.sprite.addImage('static', this.isRedAnt ? redAntImage : brownAntImage);
-//   this.sprite.scale = .3;
-//   this.sprite.setCollider('circle', 0, 0, 10)
-//   this.sprite.rotateToDirection = true;
-//   this.sprite.restitution = .8;
-//   this.sprite.setSpeed(1, random(360))
-//   this.sprite.debug = false
-//   this.sprite.limitSpeed(1)
-//   // this.sprite.friction=random(.99,1)
-//   let originalDraw = this.sprite.draw
-//   this.sprite.draw = this.draw(originalDraw)
-// }
-
 Ant.prototype.leaveTrail = function(){
   if (++this.leaveTrailCounter === this.leaveFrequency){
     if (this.activity === 'harvest'){
@@ -151,9 +139,3 @@ Ant.prototype.leaveTrail = function(){
   return undefined
 }
 
-// Ant.prototype.draw = function(originalDraw){
-//   return function(){
-//     rotate(PI/2)
-//     originalDraw()
-//   }
-// }
