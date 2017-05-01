@@ -6,27 +6,29 @@ let blackAntDNA = {
   maxHealth: 100,
   maxSpeed: 1,
   strength: 1,
-  minHealth: 80
+  minHealth: 80,
+  breedThreshold: 50
 }
 
 let redAntDNA = Object.assign({}, blackAntDNA)
 
 function learn(antSprite, DNA){
   for(let gene in DNA){
-    DNA[gene] = DNA[gene] - (DNA[gene] - antSprite[gene]) * learningRate;
+    if(gene!=='breedThreshold')DNA[gene] = DNA[gene] - (DNA[gene] - antSprite[gene]) * learningRate;
   }
 }
 
 
-function newAnt(x, y, home, isRedAnt){
+function newAnt(x, y, home, isRedAnt, newHealth){
   let newSprite = createSprite(x, y, 30, 30);
   newSprite.isRedAnt = isRedAnt;
   newSprite.homePosition = home.position;
   newSprite.hasFoodAmount = 0;
   newSprite.activity = 'wander';
   newSprite.starvationThreshold = isRedAnt ? redAntDNA.starvationThreshold : blackAntDNA.starvationThreshold;
-  newSprite.health = isRedAnt ? redAntDNA.maxHealth : blackAntDNA.maxHealth;
-  newSprite.maxHealth = newSprite.health;
+  newSprite.maxHealth = isRedAnt ? redAntDNA.maxHealth : blackAntDNA.maxHealth;
+  newSprite.health = newHealth || newSprite.maxHealth;
+
   newSprite.strength = isRedAnt ? redAntDNA.strength : blackAntDNA.strength;
   newSprite.minHealth = isRedAnt ? redAntDNA.minHealth : blackAntDNA.minHealth;
   newSprite.maxSpeed = isRedAnt ? redAntDNA.maxSpeed : blackAntDNA.maxSpeed;
@@ -51,9 +53,9 @@ function mutate(newSprite){
   newSprite.maxSpeed *= random(.9, 1.1)
   newSprite.leaveFrequency *= random(.9, 1.1);
   newSprite.healthCost = defaultHealthCost +
-     .001 * newSprite.strength +
-     .001 * newSprite.maxSpeed +
-     .001 * (newSprite.maxHealth / 100);
+     .03 * newSprite.strength +
+     .03 * newSprite.maxSpeed +
+     .03 * (newSprite.maxHealth / 100);
 }
 
 function assignAntMethods(antSprite){

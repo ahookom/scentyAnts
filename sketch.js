@@ -21,11 +21,10 @@ let starvationThreshold = 30;
 let maxHealth = 100;
 let startingRocks = 5;
 let startingFood = 10;
-let startingAnts = 10;
-let breedThreshold = 150;
+let startingAnts = 2;
 let foodEffectiveness = 5;
 let gatheringEffectiveness = 10;
-let defaultHealthCost = .01;
+let defaultHealthCost = .05;
 let learningRate = 0.05;
 
 //sprite groups
@@ -103,15 +102,11 @@ function setup(){
 
 
   //make FOOD
-
   for (let i = 0; i < startingFood; i++) {
     newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
   }
 
-  debug = createCheckbox();
-
   //make ANTS
-
   for (let i = 0; i < homes.length; i++){
     let isRedAnt = !!(i % 2);
     for (let j = 0; j < startingAnts; j++){
@@ -174,24 +169,35 @@ function antFight(antSprite1, antSprite2){
 }
 
 function reseedAnts(){
-  if(redAnts.length < 2){
-    redAnts = redAnts.concat(blackAnts.slice(Math.round(blackAnts.length / 2)));
-    blackAnts = blackAnts.slice(0, Math.round(blackAnts.length / 2));
+  console.log('reds', redAntDNA, 'blacks', blackAntDNA)
+  homes[0].foodSupply < homes[1].foodSupply ? homes[0].foodSupply = homes[1].foodSupply : homes[1].foodSupply = homes[0].foodSupply;
+  let maxPop = redAnts.length > blackAnts.length ? redAnts.length : blackAnts.length;
+  let isRed = redAnts.length < 2;
+  let index = isRed ? 1 : 0;
+  if(isRed){
     redAntDNA = Object.assign({}, blackAntDNA);
-  }else if(blackAnts.length < 2){
-    blackAnts = blackAnts.concat(redAnts.slice(Math.round(redAnts.length / 2)));
-    redAnts = redAnts.slice(0, Math.round(redAnts.length / 2));
+  }else{
     blackAntDNA = Object.assign({}, redAntDNA);
   }
-  mutateDNAs()
+  mutateDNAs();
+  for (let j = 1; j < maxPop; j++){
+    let ant = newAnt(homes[index].position.x + random(-10, 10), homes[index].position.y + random(-10, 10), homes[index], isRed);
+    ants.push(ant);
+    antSprites.add(ant);
+    if(isRed){
+      redAnts.add(ant)
+    }else{
+      blackAnts.add(ant);
+    }
+  }
 }
 
 function mutateDNAs(){
   for(let gene in redAntDNA){
-    redAntDNA[gene] = redAntDNA[gene]*((redAntDNA[gene]/redAntDNA[gene]) + ((random(-1, 1)*learningRate)*redAntDNA[gene]));
+    redAntDNA[gene] = redAntDNA[gene]*(1 + (random(-1, 1)*learningRate));
   }
   for(let gene in blackAntDNA){
-    redAntDNA[gene] = blackAntDNA[gene]*((blackAntDNA[gene]/blackAntDNA[gene]) + ((random(-1, 1)*learningRate)*blackAntDNA[gene]));
+    blackAntDNA[gene] = blackAntDNA[gene]*(1 + (random(-1, 1)*learningRate));
   }
 }
 
@@ -237,7 +243,7 @@ function draw() {
     }
 
     //this ant is moving slowly, speed him up
-    if (currentVelocity.mag() < 1){
+    if (currentVelocity.mag() < ants[index].maxSpeed){
       currentVelocity.mult(1.05)
     } else
 
@@ -290,7 +296,7 @@ function draw() {
     ants.forEach(ant => {
       if(ant.activity==='harvest'){
         let marker = ant.leaveTrail(ant)
-        ant.health -= .05;
+        ant.health -= .02;
         if (marker && marker.type === 'food'){
           harvestTrail.add(marker)
         }
@@ -299,21 +305,23 @@ function draw() {
       //   wanderTrail.add(marker)
       // }
     })
-    homes.forEach((home, index) => {
-      if(home.foodSupply > breedThreshold){
-        home.foodSupply -= breedThreshold * .5;
-        let ant = newAnt(home.position.x, home.position.y, home, !!index);
-        ants.push(ant);
-        antSprites.add(ant);
-        if(!!index){
-          redAnts.add(ant);
-        }else{
-          blackAnts.add(ant);
-        }
-      }
-    })
   }
+  homes.forEach((home, index) => {
+    let isRed = !!index;
+    let DNA = isRed ? redAntDNA : blackAntDNA;
 
+    if(home.foodSupply > DNA.breedThreshold){
+      home.foodSupply -= DNA.breedThreshold;
+      let ant = newAnt(home.position.x, home.position.y, home, !!index, DNA.breedThreshold);
+      ants.push(ant);
+      antSprites.add(ant);
+      if(isRed){
+        redAnts.add(ant);
+      }else{
+        blackAnts.add(ant);
+      }
+    }
+  })
   //add new stuff to board
   if (random(1) < 0.005){
     newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
