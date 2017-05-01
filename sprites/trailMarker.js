@@ -25,6 +25,20 @@ function foodIsGoneMarker(x, y){
   return newMarker
 }
 
+function fightTrailMarker(x, y){
+  let newMarker = createSprite(x, y)
+  newMarker.type = 'fight'
+  newMarker.life = 500
+  newMarker.setCollider('circle', 0, 0, 150)
+  newMarker.draw = function(){
+    noFill()
+    stroke(255, 0, 0)
+    ellipse(0, 0, 150)
+  }
+  newMarker.debug = false
+  return newMarker
+}
+
 function wanderTrailMarker(x, y){
   let newMarker = createSprite(x, y)
   newMarker.type = 'wander'

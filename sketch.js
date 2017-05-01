@@ -13,6 +13,9 @@ const initialPopSize = 20;
 const initialColonies = 2;
 const currentHomeFocus = 0;
 const initialFoodSupply = 10;
+let defaultStrength = 10;
+let starvationThreshold = 30;
+let maxHealth = 100;
 
 //sprite groups
 var bg=[];
@@ -32,7 +35,7 @@ function preload(){
   antHillImage = loadImage('assets/anthill.png');
   rock1Image = loadImage('assets/Rock.png');
   rock2Image = loadImage('assets/RockShadow.png');
-  appleImage = loadImage('assets/red-apple.png');
+  appleImage = loadImage('assets/redAppleSmall.png');
 }
 
 function setup() {
@@ -180,23 +183,20 @@ function draw() {
 
     //an ant with food should be on the way home. If it makes it home, it will drop it off in the overlap callback function and continue harvesting
     if (ants[index].hasFoodAmount && ants[index].hasFoodAmount > 0){
+      //check if the ant made it to one of the antHills
       if (!antSprite.overlap(homes, ants[index].dropFood)){
-
         ants[index].headHome()
         continue;
       }
     } else
     //an ant is inside the food radius so grab food, go home
     if (antSprite.overlap(food, ants[index].toggleTackleFood)){
-      if (ants[index].activity !== 'harvest'){
-        ants[index].setActivity('harvest')
-      }
+      continue;
     } else
-
+    //steer ants that intersect a food trail onto the food trail
     if (ants[index].activity !== 'harvest' && antSprite.overlap(harvestTrail, ants[index].followTrail)){
       continue;
     } else
-
     if (ants[index].activity === 'wander'){
       //handle ants who haven't found the path or the food and are freely wandering
       currentVelocity.rotate(random(-PI/6, PI/6))

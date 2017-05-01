@@ -1,10 +1,7 @@
 let trailOffset = 0;
 let foodEffectiveness = 5;
-let starvationThreshold = 50;
-let maxHealth = 100;
 let gatheringEffectiveness = 5;
 let leaveFrequency = 8;
-let defaultStrength = 10;
 
 function newAnt(x, y, home, isRedAnt){
   let newSprite = createSprite(x, y, 30, 30);
@@ -87,12 +84,16 @@ Ant.prototype.dropFood = function(antSprite, homeSprite){
 }
 
 Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
-
+  if(foodSprite.type==='foodGone'){
+    antSprite.setActivity('wander');
+    return
+  }
+  if (antSprite.activity !== 'harvest'){
+    antSprite.setActivity('harvest')
+  }
   if (antSprite.position.dist(foodSprite.position) < 3){
-
     if (foodSprite.amount < 3){
       this.setActivity('wander')
-
       if(foodSprite.amount){
         if(this.health < this.minHealth){
           this.health += 5 * foodSprite.amount;
@@ -100,7 +101,7 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
         this.hasFoodAmount = foodSprite.amount;
         }
       }
-      foodIsGoneMarker(foodSprite.position.x, foodSprite.position.y)
+      food.add(foodIsGoneMarker(foodSprite.position.x, foodSprite.position.y))
       foodSprite.remove()
       food.remove(foodSprite)
 
