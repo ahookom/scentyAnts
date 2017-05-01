@@ -3,12 +3,12 @@ function foodTrailMarker(x, y){
   let newMarker = createSprite(x, y)
   newMarker.type = 'food'
   newMarker.draw = function(){
-    stroke(255)
+    stroke(240)
     ellipse(0, 0, 1)
   }
   newMarker.debug = false
   newMarker.life = 250
-  newMarker.setCollider('circle', 0, 0, 30)
+  newMarker.setCollider('circle', 0, 0, 20)
   return newMarker
 }
 
@@ -29,7 +29,7 @@ function fightTrailMarker(x, y){
   let newMarker = createSprite(x, y)
   newMarker.type = 'fight'
   newMarker.life = 500
-  newMarker.setCollider('circle', 0, 0, 150)
+  newMarker.setCollider('circle', 0, 0, 100)
   newMarker.draw = function(){
     noFill()
     stroke(255, 0, 0)

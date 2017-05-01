@@ -3,30 +3,43 @@ let brownAntImage, redAntImage, whiteAntImage, antHillImage, appleImage;
 var rock1Image, rock2Image;
 var debug;
 
-//game config settings
-var SCENE_W = 600;
-var SCENE_H = 400;
+//sounds
+let deathSound, fightSound, biteSound;
+
+//render config settings
+var SCENE_W = 400;
+var SCENE_H = 300;
 let frameCounter = 1;
-const standardFoodAmount = 40;
+
+//play settings
+const standardFoodAmount = 50;
 const foodForDead = 10;
-const initialPopSize = 20;
 const initialColonies = 2;
-const currentHomeFocus = 0;
 const initialFoodSupply = 10;
-let defaultStrength = 10;
+let defaultStrength = 1;
 let starvationThreshold = 30;
 let maxHealth = 100;
+let startingRocks = 5;
+let startingFood = 10;
+let startingAnts = 10;
+let breedThreshold = 150;
+let foodEffectiveness = 5;
+let gatheringEffectiveness = 10;
+let defaultHealthCost = .01;
+let learningRate = 0.05;
 
 //sprite groups
-var bg=[];
-var ants =[];
-var antSprites=[];
+var bg = [];
+var ants = [];
+var antSprites = [];
 var harvestTrail = [];
-let wanderTrail = [];
 var food = [];
 let homes = [];
-let redAnts=[];
-let blackAnts=[];
+let redAnts = [];
+let blackAnts = [];
+
+//HTML elements
+let title;
 
 function preload(){
   redAntImage = loadImage('assets/Ant-48red.png');
@@ -36,10 +49,18 @@ function preload(){
   rock1Image = loadImage('assets/Rock.png');
   rock2Image = loadImage('assets/RockShadow.png');
   appleImage = loadImage('assets/redAppleSmall.png');
+  deathSound = loadSound('assets/deathRetro.wav');
+  fightSound = loadSound('assets/hitSound.wav');
+  biteSound = loadSound('assets/crunchyBite.wav');
+  title = createDiv('<h3 class=\'align=center\'>Behold! ScentyAnt Life</h3>');
 }
 
-function setup() {
-  createCanvas(300, 200);
+function setup(){
+  createCanvas(200, 150).parent('canvas-holder');
+  title.parent('title');
+  deathSound.setVolume(0.02);
+  fightSound.setVolume(0.005);
+  biteSound.setVolume(0.005);
   //establish sprite groups
   homes = new Group();
   bg = new Group();
@@ -51,31 +72,39 @@ function setup() {
   redAnts = new Group();
   ants = new Group();
 
+  blackAnts.learn = (antSprite) => learn(antSprite, blackAntDNA);
+  redAnts.learn = (antSprite) => learn(antSprite, redAntDNA);
+
   // make anthill 'homes'
   let widthChunkSize = width * 2 / initialColonies;
   let heightOffset = height / 2;
   let currentChunkBeginning = -width;
   for(let i = 0 ; i < initialColonies; i++){
     homes.add(newHome(currentChunkBeginning + widthChunkSize / 2, heightOffset));
-    heightOffset*=-1;
-    currentChunkBeginning+=widthChunkSize
+    heightOffset *= -1;
+    currentChunkBeginning += widthChunkSize
   }
 
   //create some background rocks for visual reference
-  for(let i = 0; i < 1; i++){
+  for(let i = 0; i < startingRocks; i++){
     var rock = createSprite(random(-width,width), random(-height,height));
     //cycles through rocks 0 1 2
     rock.addImage(rock2Image);
     rock.depth = rock.position.y;
-    rock.scale= random(.1,.2)+rock.position.y*.0001
-    rock.immovable=true
-    bg.add(rock);
+    rock.scale= random(.05,.15) + rock.position.y * .0001
+    if(rock.overlap(homes)){
+      i--;
+      rock.remove();
+    }else{
+      rock.immovable=true
+      bg.add(rock);
+    }
   }
 
 
   //make FOOD
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < startingFood; i++) {
     newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
   }
 
@@ -85,7 +114,7 @@ function setup() {
 
   for (let i = 0; i < homes.length; i++){
     let isRedAnt = !!(i % 2);
-    for (let j = 0; j < initialPopSize; j++){
+    for (let j = 0; j < startingAnts; j++){
       let ant = newAnt(homes[i].position.x + random(-10, 10), homes[i].position.y + random(-10, 10), homes[i], isRedAnt);
       ants.push(ant);
       antSprites.add(ant);
@@ -96,14 +125,24 @@ function setup() {
       }
     }
   }
+
 }
 
-// function mouseDragged() {
-//   vehicles.push(new Vehicle(mouseX, mouseY));
-// }
-
-function turn(antSprite) {
-  antSprite.setSpeed(0.5, random(360))
+function turn(antSprite, rock) {
+  if(!antSprite.stuckCounter){
+    antSprite.stuckCounter = 0
+  }
+  if(antSprite.stuckCounter < 3){
+    antSprite.stuckCounter++;
+    let currentVelocity = antSprite.velocity;
+    antSprite.setVelocity(currentVelocity.x * .5, currentVelocity.y * .5)
+  }else if(antSprite.stuckCounter > 3){
+    antSprite.stuckCounter = undefined
+    antSprite.activity = 'wander'
+    let newVelocity = createVector(antSprite.position.x - rock.position.x, antSprite.position.y - rock.position.y)
+    newVelocity.normalize()
+    antSprite.setVelocity(newVelocity.x, newVelocity.y)
+  }
 }
 
 function addAntToFoodSupply(antSprite, homeSprite) {
@@ -111,19 +150,48 @@ function addAntToFoodSupply(antSprite, homeSprite) {
 }
 
 function antFight(antSprite1, antSprite2){
-  antSprite1.health -= antSprite2.strength * .5 + antSprite2.strength * antSprite2.health / 200
-  antSprite2.health -= antSprite1.strength * .5 + antSprite1.strength * antSprite1.health / 200
-  antSprite1.attractionPoint(.1, antSprite2.position.x, antSprite2.position.y)
-  antSprite2.attractionPoint(.1, antSprite1.position.x, antSprite1.position.y)
+  fightSound.setVolume(.01)
+  fightSound.play();
+  antSprite1.health -= (antSprite2.strength * 5) + (antSprite2.strength * (antSprite2.health / 200))
+  antSprite2.health -= (antSprite1.strength * 5) + (antSprite1.strength * (antSprite1.health / 200))
+  antSprite1.setVelocity(0,0)
+  antSprite2.setVelocity(0,0)
+  antSprite1.attractionPoint(.01, antSprite2.position.x, antSprite2.position.y)
+  antSprite2.attractionPoint(.01, antSprite1.position.x, antSprite1.position.y)
+  // antSprite1.setVelocity(0,0);
   if(antSprite2.health > 0){
     antSprite1.activity = 'fight'
   }else{
+    turn(antSprite1)
     antSprite1.activity = 'wander'
   }
   if(antSprite1.health > 0){
     antSprite2.activity = 'fight'
   } else{
+    turn(antSprite2)
     antSprite2.activity = 'wander'
+  }
+}
+
+function reseedAnts(){
+  if(redAnts.length < 2){
+    redAnts = redAnts.concat(blackAnts.slice(Math.round(blackAnts.length / 2)));
+    blackAnts = blackAnts.slice(0, Math.round(blackAnts.length / 2));
+    redAntDNA = Object.assign({}, blackAntDNA);
+  }else if(blackAnts.length < 2){
+    blackAnts = blackAnts.concat(redAnts.slice(Math.round(redAnts.length / 2)));
+    redAnts = redAnts.slice(0, Math.round(redAnts.length / 2));
+    blackAntDNA = Object.assign({}, redAntDNA);
+  }
+  mutateDNAs()
+}
+
+function mutateDNAs(){
+  for(let gene in redAntDNA){
+    redAntDNA[gene] = redAntDNA[gene]*((redAntDNA[gene]/redAntDNA[gene]) + ((random(-1, 1)*learningRate)*redAntDNA[gene]));
+  }
+  for(let gene in blackAntDNA){
+    redAntDNA[gene] = blackAntDNA[gene]*((blackAntDNA[gene]/blackAntDNA[gene]) + ((random(-1, 1)*learningRate)*blackAntDNA[gene]));
   }
 }
 
@@ -131,24 +199,37 @@ function draw() {
   frameCounter++;
   clear();
   background(50, 150, 50);
-  ants.collide(bg, turn);
+  ants.bounce(bg, turn);
+  bg.displace(food);
   if(frameCounter%2){
-    redAnts.displace(blackAnts, antFight);
+    redAnts.collide(blackAnts, antFight);
   } else{
-    blackAnts.displace(redAnts, antFight);
+    blackAnts.collide(redAnts, antFight);
   }
+  if(redAnts.length < 2 || blackAnts.length < 2) reseedAnts();
   //handle ant game-logic
   for(let index = 0;index < ants.length;index++){
     let antSprite = ants[index];
     let currentVelocity = antSprite.velocity;
-    antSprite.health -= 0.1
+
+    //lower health and incur penalty against faster, stronger, higher health individuals
+    antSprite.health -= antSprite.healthCost;
+
     if(!ants[index])continue;
 
     //kill dead ants
-    if(ants[index].health < 1){
-      let location = antSprite.position
+    if(ants[index].health <= 0){
+      deathSound.play();
+      let location = antSprite.position;
       if(!antSprite.overlap(homes, addAntToFoodSupply)){
         newFood(location.x, location.y, food, foodForDead, whiteAntImage);
+      }
+      if(antSprite.isRedAnt){
+        redAnts.learn(antSprite);
+        redAnts.remove(antSprite);
+      }else{
+        blackAnts.learn(antSprite);
+        blackAnts.remove(antSprite);
       }
       antSprite.remove()
       ants.remove(antSprite)
@@ -208,7 +289,7 @@ function draw() {
     frameCounter = 1
     ants.forEach(ant => {
       if(ant.activity==='harvest'){
-        let marker = ant.leaveTrail()
+        let marker = ant.leaveTrail(ant)
         ant.health -= .05;
         if (marker && marker.type === 'food'){
           harvestTrail.add(marker)
@@ -218,21 +299,39 @@ function draw() {
       //   wanderTrail.add(marker)
       // }
     })
+    homes.forEach((home, index) => {
+      if(home.foodSupply > breedThreshold){
+        home.foodSupply -= breedThreshold * .5;
+        let ant = newAnt(home.position.x, home.position.y, home, !!index);
+        ants.push(ant);
+        antSprites.add(ant);
+        if(!!index){
+          redAnts.add(ant);
+        }else{
+          blackAnts.add(ant);
+        }
+      }
+    })
+  }
+
+  //add new stuff to board
+  if (random(1) < 0.005){
+    newFood(random(-width, width), random(-height, height), food, standardFoodAmount)
   }
 
   camera.position.x = 0
   camera.position.y = 0
-  if(mouseIsPressed)
-    camera.zoom = 1;
-  else
-    camera.zoom = 0.5;
 
-  // if (random(1) < 0.1)
-  //   var x = random(width);
-  //   var y = random(height);
-  //   food.push(createVector(x, y));
-  // }
+  if(mouseIsPressed){
+    camera.zoom = 1;
+    camera.position.x += .7*camera.mouseX;
+    camera.position.y += .7*camera.mouseY;
+  } else{
+    camera.zoom = 0.5;
+  }
+
 
   drawSprites()
+
   camera.off();
 }

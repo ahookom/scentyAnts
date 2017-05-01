@@ -1,26 +1,59 @@
 let trailOffset = 0;
-let foodEffectiveness = 5;
-let gatheringEffectiveness = 5;
-let leaveFrequency = 8;
+
+let blackAntDNA = {
+  leaveFrequency: 8,
+  starvationThreshold: 30,
+  maxHealth: 100,
+  maxSpeed: 1,
+  strength: 1,
+  minHealth: 80
+}
+
+let redAntDNA = Object.assign({}, blackAntDNA)
+
+function learn(antSprite, DNA){
+  for(let gene in DNA){
+    DNA[gene] = DNA[gene] - (DNA[gene] - antSprite[gene]) * learningRate;
+  }
+}
+
 
 function newAnt(x, y, home, isRedAnt){
   let newSprite = createSprite(x, y, 30, 30);
   newSprite.isRedAnt = isRedAnt;
-  newSprite = setupAntSprite(newSprite);
   newSprite.homePosition = home.position;
   newSprite.hasFoodAmount = 0;
-  newSprite.health = maxHealth;
-  newSprite.strength = defaultStrength;
-  newSprite.minHealth = 80;
   newSprite.activity = 'wander';
-  newSprite.leaveFrequency = leaveFrequency;
+  newSprite.starvationThreshold = isRedAnt ? redAntDNA.starvationThreshold : blackAntDNA.starvationThreshold;
+  newSprite.health = isRedAnt ? redAntDNA.maxHealth : blackAntDNA.maxHealth;
+  newSprite.maxHealth = newSprite.health;
+  newSprite.strength = isRedAnt ? redAntDNA.strength : blackAntDNA.strength;
+  newSprite.minHealth = isRedAnt ? redAntDNA.minHealth : blackAntDNA.minHealth;
+  newSprite.maxSpeed = isRedAnt ? redAntDNA.maxSpeed : blackAntDNA.maxSpeed;
+  newSprite.leaveFrequency = isRedAnt ? redAntDNA.leaveFrequency : blackAntDNA.leaveFrequency;
   newSprite.leaveTrailCounter = trailOffset++ % newSprite.leaveFrequency;
+  mutate(newSprite)
+  setupAntSprite(newSprite);
   assignAntMethods(newSprite)
   return newSprite;
 }
 
 function Ant(){
   return {};
+}
+
+function mutate(newSprite){
+  newSprite.starvationThreshold *= random(.9, 1.1)
+  newSprite.health *= random(.9, 1.1)
+  newSprite.strength *= random(.9, 1.1)
+  newSprite.minHealth *= random(.9, 1.1)
+  newSprite.maxHealth *= random(.9, 1.1)
+  newSprite.maxSpeed *= random(.9, 1.1)
+  newSprite.leaveFrequency *= random(.9, 1.1);
+  newSprite.healthCost = defaultHealthCost +
+     .001 * newSprite.strength +
+     .001 * newSprite.maxSpeed +
+     .001 * (newSprite.maxHealth / 100);
 }
 
 function assignAntMethods(antSprite){
@@ -31,18 +64,17 @@ function assignAntMethods(antSprite){
 
 function setupAntSprite(antSprite){
   antSprite.addImage('static', antSprite.isRedAnt ? redAntImage : brownAntImage);
-  antSprite.scale = .3;
+  antSprite.scale = .35 * antSprite.strength;
   antSprite.setCollider('circle', 0, 0, 10);
   antSprite.rotateToDirection = true;
-  antSprite.restitution = .8;
+  antSprite.restitution = .3;
   antSprite.setSpeed(1, random(360));
-  antSprite.limitSpeed(1);
+  antSprite.limitSpeed(antSprite.isRedAnt ? redAntDNA.maxSpeed : blackAntDNA.maxSpeed);
   let originalDraw = antSprite.draw;
   antSprite.draw = function(){
     rotate(PI/2)
     originalDraw()
   }
-  return antSprite;
 }
 
 Ant.prototype.setActivity = function(activity){
@@ -50,12 +82,19 @@ Ant.prototype.setActivity = function(activity){
 }
 
 Ant.prototype.eatHomeSupply = function(antSprite, homeSprite){
-  while(this.health < maxHealth && homeSprite.foodSupply > 0){
+  while(this.health < this.maxHealth && homeSprite.foodSupply > 0){
     homeSprite.foodSupply -= 1;
     this.health += foodEffectiveness;
   }
   this.activity = 'wander';
-  if(homeSprite.foodSupply < 1)this.activity = 'frenzy';
+  if(homeSprite.foodSupply < 1){
+    this.activity = 'frenzy';
+    if(this.homePosition.x === homes[1].position.x){
+      this.homePosition=homes[0].position
+    }else{
+      this.homePosition=homes[1].position
+    }
+  }
 }
 
 Ant.prototype.headHome = function(){
@@ -97,6 +136,7 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
       if(foodSprite.amount){
         if(this.health < this.minHealth){
           this.health += 5 * foodSprite.amount;
+          biteSound.play()
         } else {
         this.hasFoodAmount = foodSprite.amount;
         }
@@ -108,10 +148,10 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
     }else{
 
       if(this.health < this.minHealth){
-        let totalTaken = gatheringEffectiveness + Math.floor((100 - this.health) / foodEffectiveness)
+        let totalTaken = gatheringEffectiveness*this.strength + Math.floor((100 - this.health) / foodEffectiveness)
         foodSprite.amount -= totalTaken;
-        this.health += foodEffectiveness * totalTaken - 5;
-        this.hasFoodAmount = 5;
+        this.health += foodEffectiveness * (totalTaken - gatheringEffectiveness * this.strength);
+        this.hasFoodAmount = gatheringEffectiveness * this.strength;
       } else {
         foodSprite.amount -= gatheringEffectiveness;
         this.hasFoodAmount = gatheringEffectiveness;
@@ -126,15 +166,11 @@ Ant.prototype.toggleTackleFood = function(antSprite, foodSprite){
   }
 }
 
-Ant.prototype.leaveTrail = function(){
-  if (++this.leaveTrailCounter === this.leaveFrequency){
-    if (this.activity === 'harvest'){
-      this.leaveTrailCounter = 0
-      return foodTrailMarker(this.position.x, this.position.y)
-    }
-    if (this.activity === 'wander'){
-      this.leaveTrailCounter = 0
-      return wanderTrailMarker(this.position.x, this.position.y)
+Ant.prototype.leaveTrail = function(ant){
+  if (++ant.leaveTrailCounter >= ant.leaveFrequency){
+    if (ant.activity === 'harvest'){
+      ant.leaveTrailCounter = 0
+      return foodTrailMarker(ant.position.x, ant.position.y)
     }
   }
   return undefined
