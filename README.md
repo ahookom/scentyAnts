@@ -1,23 +1,5 @@
-# Coding Challenge 69: Steering Evolution
-* Edited Videos for this challenge: TBD
-* Live Stream: TBD 
-
-## Community Variations
-
-#### By: [SetupandDraw](https://github.com/SetupandDraw)
-[Repository](https://github.com/SetupandDraw/experiments/tree/gh-pages/Evolve_steering_Behavior) | [Demo](https://setupanddraw.github.io/experiments/Evolve_steering_Behavior/)
-  * Next generation automation based on vehicles' healthiest survivor + some fine-tuning to the genetic algorithm.
-  * Press alt for switch debug on/off.
-  * Mouse press for adding new vehicles.
-  * Further implementations maybe in the future.
-
-
-#### Feed the Boids!
-#### By: [Carla de Beer](https://github.com/Carla-de-Beer)
-[Repository](https://github.com/Carla-de-Beer/Feed-the-Boids) | [Demo](https://carla-de-beer.github.io/Feed-the-Boids/index.html)
-  * Press Enter to toggle visibility and perception radii and display current fittest boid.
-  * Click on the screen to create more food, mess with evolution and create a new fittest boid.
-
-
-
-
+This is a P5.play project I made because I was curious about how relatively unsophisticated agents with no knowledge of their global environment can cooperate to explore a solution space.
+It is an ant simulator where the ants leave scent-trails to organize their behavior. The white markers indicate a trail to nearby food. If an ant encounters a white marker, it will follow the trail away from its "home" anthill. When the food is exhausted, an ant will leave a new scent marker that tells the other ants to stop following that scent trail. 
+Each ant colony reproduces based on mutations from a shared set of DNA that adapts based on which ants die. (For example, if the ants that die are weaker than the average ant, the "strength" gene will increase, even though being stronger will cost them more health per turn.)
+If an ant colony gets down to 1 ant, it is re-seeded based on a mutation of the other ant colony's current genes.
+I got the idea of evolving agents to find food and avoid obstacles from Daniel Shiffman's Coding Train videos https://youtu.be/flxOkx0yLrY.
