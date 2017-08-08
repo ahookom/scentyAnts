@@ -7,8 +7,8 @@ var debug;
 let deathSound, fightSound, biteSound;
 
 //render config settings
-var SCENE_W = 800;
-var SCENE_H = 600;
+var SCENE_W = 500;
+var SCENE_H = 400;
 let frameCounter = 1;
 
 //play settings
@@ -24,7 +24,7 @@ let startingFood = 10;
 let startingAnts = 20;
 let foodEffectiveness = 5;
 let gatheringEffectiveness = 10;
-let defaultHealthCost = .01;
+let defaultHealthCost = .005;
 let learningRate = 0.05;
 
 //sprite groups

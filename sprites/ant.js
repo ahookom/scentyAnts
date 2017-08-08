@@ -55,9 +55,9 @@ function mutate(newSprite){
   newSprite.maxSpeed *= random(.9, 1.1)
   newSprite.leaveFrequency *= random(.9, 1.1);
   newSprite.healthCost = defaultHealthCost +
-     .02 * newSprite.strength +
-     .02 * newSprite.maxSpeed +
-     .01 * (newSprite.maxHealth / 100);
+     .01 * newSprite.strength +
+     .01 * newSprite.maxSpeed +
+     .005 * (newSprite.maxHealth / 100);
 }
 
 function assignAntMethods(antSprite){
