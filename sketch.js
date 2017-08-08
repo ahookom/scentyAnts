@@ -7,8 +7,8 @@ var debug;
 let deathSound, fightSound, biteSound;
 
 //render config settings
-var SCENE_W = 400;
-var SCENE_H = 300;
+var SCENE_W = 800;
+var SCENE_H = 600;
 let frameCounter = 1;
 
 //play settings
@@ -21,10 +21,10 @@ let starvationThreshold = 30;
 let maxHealth = 100;
 let startingRocks = 5;
 let startingFood = 10;
-let startingAnts = 2;
+let startingAnts = 20;
 let foodEffectiveness = 5;
 let gatheringEffectiveness = 10;
-let defaultHealthCost = .05;
+let defaultHealthCost = .01;
 let learningRate = 0.05;
 
 //sprite groups
@@ -51,11 +51,11 @@ function preload(){
   deathSound = loadSound('assets/deathRetro.wav');
   fightSound = loadSound('assets/hitSound.wav');
   biteSound = loadSound('assets/crunchyBite.wav');
-  title = createDiv('<h3 class=\'align=center\'>Behold! ScentyAnt Life</h3>');
+  title = createDiv('<h1>ScentyAnts Ant Simulator</h1><br>');
 }
 
 function setup(){
-  createCanvas(200, 150).parent('canvas-holder');
+  createCanvas(500, 400).parent('canvas-holder');
   title.parent('title');
   deathSound.setVolume(0.02);
   fightSound.setVolume(0.005);
@@ -90,6 +90,7 @@ function setup(){
     //cycles through rocks 0 1 2
     rock.addImage(rock2Image);
     rock.depth = rock.position.y;
+    rock.setCollider('circle', 0, 0, 40);
     rock.scale= random(.05,.15) + rock.position.y * .0001
     if(rock.overlap(homes)){
       i--;
@@ -201,6 +202,16 @@ function mutateDNAs(){
   }
 }
 
+function eatEnemySupply(antSprite, homeSprite){
+  if(antSprite.homePosition.x !== homeSprite.position.x){
+    while(homeSprite.foodSupply > 0 && antSprite.health < antSprite.maxHealth * 1.5){
+      homeSprite.foodSupply -= 1;
+      antSprite.health += foodEffectiveness;
+    }
+    antSprite.activity = 'wander';
+  }
+}
+
 function draw() {
   frameCounter++;
   clear();
@@ -242,6 +253,8 @@ function draw() {
       continue;
     }
 
+    ants[index].overlap(homes, eatEnemySupply);
+
     //this ant is moving slowly, speed him up
     if (currentVelocity.mag() < ants[index].maxSpeed){
       currentVelocity.mult(1.05)
@@ -258,7 +271,7 @@ function draw() {
     //checks if the starving ant made it home lets him eat if he did (unless no food)
     if(ants[index].activity === 'feed' && antSprite.overlap(homes, ants[index].eatHomeSupply.bind(ants[index]))){
       continue;
-    }
+    } else
 
     //the ant hits the edge of the board, turn him around
     if (abs(antSprite.position.x) > width){
@@ -270,6 +283,8 @@ function draw() {
 
     //an ant with food should be on the way home. If it makes it home, it will drop it off in the overlap callback function and continue harvesting
     if (ants[index].hasFoodAmount && ants[index].hasFoodAmount > 0){
+      //jitter a bit
+      ants[index].setVelocity(0.001*random(-1,1)+currentVelocity.x, 0.001*random(-1,1)+currentVelocity.y)
       //check if the ant made it to one of the antHills
       if (!antSprite.overlap(homes, ants[index].dropFood)){
         ants[index].headHome()
@@ -286,8 +301,9 @@ function draw() {
     } else
     if (ants[index].activity === 'wander'){
       //handle ants who haven't found the path or the food and are freely wandering
-      currentVelocity.rotate(random(-PI/6, PI/6))
+      currentVelocity.rotate(random(-ants[index].turnFactor, ants[index].turnFactor))
     }
+
   }
 
   //handle Trails
@@ -305,6 +321,7 @@ function draw() {
       //   wanderTrail.add(marker)
       // }
     })
+
   }
   homes.forEach((home, index) => {
     let isRed = !!index;

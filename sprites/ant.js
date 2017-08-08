@@ -7,7 +7,8 @@ let blackAntDNA = {
   maxSpeed: 1,
   strength: 1,
   minHealth: 80,
-  breedThreshold: 50
+  breedThreshold: 50,
+  turnFactor: 3.1415926 / 6
 }
 
 let redAntDNA = Object.assign({}, blackAntDNA)
@@ -18,7 +19,6 @@ function learn(antSprite, DNA){
   }
 }
 
-
 function newAnt(x, y, home, isRedAnt, newHealth){
   let newSprite = createSprite(x, y, 30, 30);
   newSprite.isRedAnt = isRedAnt;
@@ -26,6 +26,7 @@ function newAnt(x, y, home, isRedAnt, newHealth){
   newSprite.hasFoodAmount = 0;
   newSprite.activity = 'wander';
   newSprite.starvationThreshold = isRedAnt ? redAntDNA.starvationThreshold : blackAntDNA.starvationThreshold;
+  newSprite.turnFactor = isRedAnt ? redAntDNA.turnFactor : blackAntDNA.turnFactor;
   newSprite.maxHealth = isRedAnt ? redAntDNA.maxHealth : blackAntDNA.maxHealth;
   newSprite.health = newHealth || newSprite.maxHealth;
 
@@ -47,15 +48,16 @@ function Ant(){
 function mutate(newSprite){
   newSprite.starvationThreshold *= random(.9, 1.1)
   newSprite.health *= random(.9, 1.1)
+  newSprite.turnFactor *= random(.9, 1.1)
   newSprite.strength *= random(.9, 1.1)
   newSprite.minHealth *= random(.9, 1.1)
   newSprite.maxHealth *= random(.9, 1.1)
   newSprite.maxSpeed *= random(.9, 1.1)
   newSprite.leaveFrequency *= random(.9, 1.1);
   newSprite.healthCost = defaultHealthCost +
-     .03 * newSprite.strength +
-     .03 * newSprite.maxSpeed +
-     .03 * (newSprite.maxHealth / 100);
+     .02 * newSprite.strength +
+     .02 * newSprite.maxSpeed +
+     .01 * (newSprite.maxHealth / 100);
 }
 
 function assignAntMethods(antSprite){
@@ -69,7 +71,7 @@ function setupAntSprite(antSprite){
   antSprite.scale = .35 * antSprite.strength;
   antSprite.setCollider('circle', 0, 0, 10);
   antSprite.rotateToDirection = true;
-  antSprite.restitution = .3;
+  antSprite.restitution = .7;
   antSprite.setSpeed(1, random(360));
   antSprite.limitSpeed(antSprite.isRedAnt ? redAntDNA.maxSpeed : blackAntDNA.maxSpeed);
   let originalDraw = antSprite.draw;
@@ -91,11 +93,16 @@ Ant.prototype.eatHomeSupply = function(antSprite, homeSprite){
   this.activity = 'wander';
   if(homeSprite.foodSupply < 1){
     this.activity = 'frenzy';
+    let otherHome;
     if(this.homePosition.x === homes[1].position.x){
-      this.homePosition=homes[0].position
+      otherHome = homes[0].position
     }else{
-      this.homePosition=homes[1].position
+      otherHome = homes[1].position
     }
+    let newVector = createVector(otherHome.x - this.homePosition.x, otherHome.y - this.homePosition.y)
+    newVector.normalize()
+    newVector.mult(2)
+    this.setVelocity(newVector.x, newVector.y)
   }
 }
 
